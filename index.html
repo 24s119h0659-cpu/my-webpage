@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>정확한 랜덤 룰렛 - 12시 기준</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: #e6eef8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+}
+.wheel-wrap {
+  position: relative;
+  width: 360px;
+  height: 360px;
+  margin-bottom: 24px;
+}
+canvas {
+  border-radius: 50%;
+  box-shadow: 0 10px 30px rgba(2,6,23,.6), inset 0 6px 20px rgba(255,255,255,.03);
+}
+.pointer {
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-bottom: 22px solid #fffb;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.6));
+  z-index: 10;
+}
+button {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #1f6feb;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+.result {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.03);
+  min-height: 46px;
+  color: #fffb;
+}
+</style>
+</head>
+<body>
+<div class="wheel-wrap">
+  <div class="pointer"></div>
+  <canvas id="wheelCanvas" width="360" height="360"></canvas>
+</div>
+<button id="spinBtn">회전</button>
+<div class="result" id="result">준비됨</div>
+<script>
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+const spinBtn = document.getElementById('spinBtn');
+const resultBox = document.getElementById('result');
+
+// 룰렛 사이트 설정
+let slices = [
+  { label: '일권쌤', url: 'https://namu.wiki/w/%EC%86%A1%EA%B0%95' },
+  { label: '네이버', url: 'https://www.naver.com/' },
+  { label: '싹스리', url: 'https://www.youtube.com/watch?v=2I1sddCDLWU' },
+  { label: '챗', url: 'https://chatgpt.com/' },
+  { label: '세명컴고전설', url: 'https://n.lrl.kr/UoiRKp' },
+  { label: '컴시간알리미', url: 'file:///C:/Users/user/Documents/%EC%83%88%20%ED%8F%B4%EB%8D%94/1.html' },
+  { label: '로켓펀치', url: 'https://www.youtube.com/watch?v=l0UXaDd_t6M&t=312s' },
+  { label: '수학', url: 'https://namu.wiki/w/%EC%88%98%ED%95%99' }
+];
+
+const arrowOffsetAngle = 0; // 12시 기준
+const anglePer = 360 / slices.length;
+
+function drawWheel() {
+  ctx.clearRect(0,0,360,360);
+  slices.forEach((s,i) => {
+    const start = i * 2 * Math.PI / slices.length;
+    const end = start + 2 * Math.PI / slices.length;
+    ctx.beginPath();
+    ctx.moveTo(180,180);
+    ctx.arc(180,180,180,start,end);
+    ctx.fillStyle = i % 2 === 0 ? '#ff8a8a' : '#8ad0ff';
+    ctx.fill();
+    ctx.save();
+    ctx.translate(180,180);
+    ctx.rotate(start + (end-start)/2);
+    ctx.textAlign='right';
+    ctx.fillStyle='#000';
+    ctx.font='bold 14px Arial';
+    ctx.fillText(s.label,160,5);
+    ctx.restore();
+  });
+}
+
+drawWheel();
+
+spinBtn.addEventListener('click', () => {
+  const spins = 5 + Math.random() * 5; // 5~10바퀴 랜덤
+  const randomAngle = Math.random() * 360;
+  const totalAngle = spins*360 + randomAngle;
+
+  canvas.style.transition = 'transform 4s cubic-bezier(.15,.9,.05,1)';
+  canvas.style.transform = `rotate(${totalAngle}deg)`;
+
+  canvas.addEventListener('transitionend', function te() {
+    canvas.removeEventListener('transitionend', te);
+
+    // 12시 화살표 기준 당첨 계산
+    let landedIndex = slices.length - Math.floor((totalAngle % 360) / anglePer);
+    landedIndex = landedIndex % slices.length;
+
+    const chosen = slices[landedIndex];
+    resultBox.textContent = `결과: ${chosen.label} (슬라이스 ${landedIndex+1})`;
+
+    setTimeout(() => {
+      if(chosen.url) window.location.href = chosen.url;
+    }, 3000);
+  });
+});
+</script>
+</body>
+</html>
